@@ -120,19 +120,42 @@ const runPlugin = async () => {
                 continue;
             }
 
+            const notationIsFile = input.notation.includes('/file/');
+            const isFileReference = typeof secret === 'object' && 
+                secret !== null && 
+                (secret.fileId || secret.fileUid || secret.url || notationIsFile);
+
+            let data;
+            
+            if (isFileReference) {
+                try {
+                    const fileData = await downloadFile(secret);
+                    data = fileData instanceof Uint8Array ? Buffer.from(fileData) : 
+                           Buffer.isBuffer(fileData) ? fileData : Buffer.from(fileData);
+                } catch (downloadError) {
+                    core.error(`Failed to download file for notation ${input.notation}: ${downloadError.message}`);
+                    continue;
+                }
+            } else {
+                data = Buffer.isBuffer(secret) ? secret : 
+                       typeof secret === 'string' ? Buffer.from(secret, 'utf8') : 
+                       Buffer.from(String(secret), 'utf8');
+            }
+
             if (input.destinationType === 'file') {
                 const fullPath = path.resolve(input.destination);
                 fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-                const data = (typeof secret === 'object' && secret.fileId) 
-                    ? await downloadFile(secret) 
-                    : secret;
                 fs.writeFileSync(fullPath, data);
-            } else if (input.destinationType === 'environment') {
-                // Output with ENV: prefix for environment variables
-                console.log(`ENV:${input.destination}='${secret}'`);
             } else {
-                // Output variable (for Harness output variables)
-                console.log(`OUT:${input.destination}='${secret}'`);
+                fs.mkdirSync('/harness/secrets', { recursive: true });
+                const secretFilePath = path.join('/harness/secrets', input.destination);
+                fs.writeFileSync(secretFilePath, data);
+                fs.chmodSync(secretFilePath, 0o600);
+                
+                if (input.destinationType === 'environment') {
+                    const outputValue = Buffer.isBuffer(data) ? data.toString('utf8') : String(data);
+                    console.log(`ENV:${input.destination}='${outputValue}'`);
+                }
             }
         }
     } catch (error) {
