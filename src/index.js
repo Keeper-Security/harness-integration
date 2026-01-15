@@ -106,6 +106,7 @@ const setupStorage = async (token, isConfigJson, config) => {
 
 const runPlugin = async () => {
     try {
+        core.info('Starting Keeper Secrets Manager plugin');
         fs.mkdirSync('/app', { recursive: true });
         
         const { token, isConfigJson, config } = processToken(process.env.KSM_CONFIG);
@@ -130,8 +131,9 @@ const runPlugin = async () => {
             if (isFileReference) {
                 try {
                     const fileData = await downloadFile(secret);
-                    data = fileData instanceof Uint8Array ? Buffer.from(fileData) : 
-                           Buffer.isBuffer(fileData) ? fileData : Buffer.from(fileData);
+                    data = Buffer.isBuffer(fileData) ? fileData : 
+                           fileData instanceof Uint8Array ? Buffer.from(fileData) : 
+                           Buffer.from(fileData);
                 } catch (downloadError) {
                     core.error(`Failed to download file for notation ${input.notation}: ${downloadError.message}`);
                     continue;
@@ -153,7 +155,7 @@ const runPlugin = async () => {
                 fs.chmodSync(secretFilePath, 0o600);
                 
                 if (input.destinationType === 'environment') {
-                    const outputValue = Buffer.isBuffer(data) ? data.toString('utf8') : String(data);
+                    const outputValue = data.toString('utf8');
                     console.log(`ENV:${input.destination}='${outputValue}'`);
                 }
             }
