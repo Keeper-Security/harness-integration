@@ -78,7 +78,6 @@ pipeline:
                       secrets: |
                         VeYTRo-PHElAwfQT6f0TIA/field/password > DB_PASSWORD
                         VeYTRo-PHElAwfQT6f0TIA/field/login > DB_USERNAME
-                        VeYTRo-PHElAwfQT6f0TIA/custom_field/text > KEEPER_TEXT
                         VeYTRo-PHElAwfQT6f0TIA/file/credentials.txt > FILE_DATA
                     envVariables:
                       KSM_CONFIG: <+secrets.getValue("Test_File_secret")>
@@ -130,7 +129,6 @@ Keeper Notation queries mapping secrets to destinations:
 secrets: |
   VeYTRo-PHElAwfQT6f0TIA/field/password > DB_PASSWORD
   VeYTRo-PHElAwfQT6f0TIA/field/login > DB_USERNAME
-  VeYTRo-PHElAwfQT6f0TIA/custom_field/text > KEEPER_TEXT
   VeYTRo-PHElAwfQT6f0TIA/file/credentials.txt > FILE_DATA
 ```
 
