@@ -31,20 +31,6 @@ All secrets are:
 - **Automatically cleaned up**: Harness CI removes all secrets after pipeline completion
 - **Securely stored**: Files have restricted permissions (600 - owner read/write only)
 
-### Project Structure
-
-```
-harness_keeper_plugin/
-├── src/
-│   └── index.js          # Main plugin logic
-├── entrypoint.sh         # Container entrypoint script
-├── Dockerfile            # Docker image definition
-├── package.json          # Node.js dependencies
-├── Example/
-│   └── Pipeline.yaml     # Example Harness CI pipeline
-└── README.md            # This file
-```
-
 ## Quick Start
 
 ```yaml
