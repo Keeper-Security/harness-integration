@@ -46,7 +46,7 @@ const processToken = (rawToken) => {
             token = Buffer.from(token, 'base64').toString('utf-8').trim();
         } catch (e) {
             // Not base64, use as-is
-            console.log(e)
+            console.log(e);
         }
     }
 
@@ -132,16 +132,16 @@ const runPlugin = async () => {
                 try {
                     const fileData = await downloadFile(secret);
                     data = Buffer.isBuffer(fileData) ? fileData : 
-                           fileData instanceof Uint8Array ? Buffer.from(fileData) : 
-                           Buffer.from(fileData);
+                        fileData instanceof Uint8Array ? Buffer.from(fileData) : 
+                            Buffer.from(fileData);
                 } catch (downloadError) {
                     core.error(`Failed to download file for notation ${input.notation}: ${downloadError.message}`);
                     continue;
                 }
             } else {
                 data = Buffer.isBuffer(secret) ? secret : 
-                       typeof secret === 'string' ? Buffer.from(secret, 'utf8') : 
-                       Buffer.from(String(secret), 'utf8');
+                    typeof secret === 'string' ? Buffer.from(secret, 'utf8') : 
+                        Buffer.from(String(secret), 'utf8');
             }
 
             if (input.destinationType === 'file') {

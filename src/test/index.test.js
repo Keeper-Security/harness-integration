@@ -296,7 +296,7 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith("ENV:VAR_NAME='secret-value'");
+            expect(mockConsoleLog).toHaveBeenCalledWith('ENV:VAR_NAME=\'secret-value\'');
         });
 
         test('should parse file: destination type', async () => {
@@ -705,7 +705,7 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith("ENV:VAR_NAME='env-value'");
+            expect(mockConsoleLog).toHaveBeenCalledWith('ENV:VAR_NAME=\'env-value\'');
             expect(fs.mkdirSync).toHaveBeenCalledWith('/harness/secrets', { recursive: true });
             expect(fs.writeFileSync).toHaveBeenCalled();
             expect(fs.chmodSync).toHaveBeenCalled();
@@ -721,7 +721,7 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining("ENV:VAR_NAME"));
+            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('ENV:VAR_NAME'));
         });
 
         test('should handle environment destination with non-Buffer data (line 157 branch)', async () => {
@@ -735,8 +735,8 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining("ENV:VAR_NAME"));
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining("12345"));
+            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('ENV:VAR_NAME'));
+            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('12345'));
         });
 
 
