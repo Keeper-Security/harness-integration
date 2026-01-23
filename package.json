@@ -15,7 +15,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@keeper-security/secrets-manager-core": "^17.3.0"
+    "@keeper-security/secrets-manager-core": "^17.4.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
