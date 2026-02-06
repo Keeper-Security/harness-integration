@@ -1,0 +1,32 @@
+# Dependencies - we install fresh in Docker
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Git files - not needed in image
+.git
+.gitignore
+.gitattributes
+
+# IDE and editor files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+dist/
+build/
+*.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
