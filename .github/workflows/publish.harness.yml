@@ -20,7 +20,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'v1.0.0'  # Triggers on version tags like v1.0.0, v1.0.1, etc.
+      - 'v*.*.*'  # Triggers on any version tag (v1.0.0, v1.0.1, v2.0.0, etc.) — no manual update per release
     
 jobs:
   test:

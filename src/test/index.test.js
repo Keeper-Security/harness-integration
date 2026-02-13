@@ -261,9 +261,8 @@ describe('index.js - Complete Test Suite', () => {
             expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('INFO: Starting Keeper Secrets Manager plugin'));
         });
 
-        test('should test console.log in base64 decode catch block', () => {
-            // This test ensures line 49 (console.log(e)) is covered
-            // Buffer.from doesn't throw for invalid base64, so we need to mock it to throw
+        test('should log base64 decode skip to stderr (no secret on stdout)', () => {
+            // Base64 decode failure is logged to stderr only, never stdout — avoids leaking to Docker logs
             const originalBufferFrom = Buffer.from;
             Buffer.from = jest.fn(() => {
                 throw new Error('Base64 decode error');
@@ -277,16 +276,14 @@ describe('index.js - Complete Test Suite', () => {
             getValue.mockReturnValue('secret-value');
             
             require('../index');
-            // The console.log in catch block should have been called
-            expect(mockConsoleLog).toHaveBeenCalled();
+            expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Base64 decode failed, using raw value'));
             
-            // Restore Buffer.from
             Buffer.from = originalBufferFrom;
         });
     });
 
     describe('parseSecretMappings', () => {
-        test('should parse env: destination type', async () => {
+        test('should treat env: prefix as literal destination name (no special parsing)', async () => {
             process.env.KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
@@ -296,7 +293,7 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith('ENV:VAR_NAME=\'secret-value\'');
+            expect(fs.writeFileSync).toHaveBeenCalledWith('/harness/secrets/env:VAR_NAME', expect.any(Buffer));
         });
 
         test('should parse file: destination type', async () => {
@@ -408,7 +405,7 @@ describe('index.js - Complete Test Suite', () => {
             expect(fs.mkdirSync).toHaveBeenCalledWith('/app', { recursive: true });
         });
 
-        test('should handle file destination type', async () => {
+        test('should treat file: prefix as literal destination (writes to /harness/secrets/)', async () => {
             process.env.KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
@@ -418,11 +415,10 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(path.resolve).toHaveBeenCalledWith('/path/to/file.txt');
-            expect(fs.writeFileSync).toHaveBeenCalled();
+            expect(fs.writeFileSync).toHaveBeenCalledWith('/harness/secrets/file:/path/to/file.txt', expect.any(Buffer));
         });
 
-        test('should create directory for file destination', async () => {
+        test('should create /harness/secrets for any destination', async () => {
             process.env.KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
@@ -433,7 +429,7 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(fs.mkdirSync).toHaveBeenCalledWith('/path/to', { recursive: true });
+            expect(fs.mkdirSync).toHaveBeenCalledWith('/harness/secrets', { recursive: true });
         });
 
         test('should handle file secret with fileId', async () => {
@@ -695,7 +691,7 @@ describe('index.js - Complete Test Suite', () => {
     });
 
     describe('runPlugin - Destination Types', () => {
-        test('should handle environment destination type', async () => {
+        test('should handle env-prefixed destination as literal (writes to /harness/secrets/)', async () => {
             process.env.KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
@@ -705,13 +701,12 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith('ENV:VAR_NAME=\'env-value\'');
+            expect(fs.writeFileSync).toHaveBeenCalledWith('/harness/secrets/env:VAR_NAME', expect.any(Buffer));
             expect(fs.mkdirSync).toHaveBeenCalledWith('/harness/secrets', { recursive: true });
-            expect(fs.writeFileSync).toHaveBeenCalled();
-            expect(fs.chmodSync).toHaveBeenCalled();
+            expect(fs.chmodSync).toHaveBeenCalledWith('/harness/secrets/env:VAR_NAME', 0o600);
         });
 
-        test('should handle environment destination with Buffer data', async () => {
+        test('should handle env-prefixed destination with Buffer data', async () => {
             process.env.KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
@@ -721,22 +716,24 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('ENV:VAR_NAME'));
+            const call = fs.writeFileSync.mock.calls.find(c => c[0] === '/harness/secrets/env:VAR_NAME');
+            expect(call).toBeDefined();
+            expect(call[1].toString('utf8')).toBe('buffer-env-value');
         });
 
-        test('should handle environment destination with non-Buffer data (line 157 branch)', async () => {
+        test('should handle env-prefixed destination with non-Buffer data', async () => {
             process.env.KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
             getSecrets.mockResolvedValue({});
-            // Return a number to test the String(data) branch
             getValue.mockReturnValue(12345);
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('ENV:VAR_NAME'));
-            expect(mockConsoleLog).toHaveBeenCalledWith(expect.stringContaining('12345'));
+            const call = fs.writeFileSync.mock.calls.find(c => c[0] === '/harness/secrets/env:VAR_NAME');
+            expect(call).toBeDefined();
+            expect(call[1].toString('utf8')).toBe('12345');
         });
 
 
@@ -766,7 +763,7 @@ describe('index.js - Complete Test Suite', () => {
             expect(fs.chmodSync).toHaveBeenCalledWith('/harness/secrets/output_var', 0o600);
         });
 
-        test('should not output ENV: for non-environment destinations', async () => {
+        test('should write only to /harness/secrets for output destinations', async () => {
             process.env.KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
@@ -776,7 +773,7 @@ describe('index.js - Complete Test Suite', () => {
 
             require('../index');
             await waitForAsync();
-            expect(mockConsoleLog).not.toHaveBeenCalledWith(expect.stringContaining('ENV:'));
+            expect(fs.writeFileSync).toHaveBeenCalledWith('/harness/secrets/output_var', expect.any(Buffer));
         });
     });
 

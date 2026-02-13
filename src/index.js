@@ -46,7 +46,7 @@ const processToken = (rawToken) => {
             token = Buffer.from(token, 'base64').toString('utf-8').trim();
         } catch (e) {
             // Not base64, use as-is
-            console.log(e);
+            core.warning('Base64 decode failed, using raw value');
         }
     }
 
@@ -84,12 +84,6 @@ const processToken = (rawToken) => {
 const parseSecretMappings = () => {
     return core.getMultilineInput('secrets').map(line => {
         const [notation, destRaw] = splitInput(line);
-        if (destRaw.startsWith('env:')) {
-            return { notation, destination: destRaw.slice(4), destinationType: 'environment' };
-        }
-        if (destRaw.startsWith('file:')) {
-            return { notation, destination: destRaw.slice(5), destinationType: 'file' };
-        }
         return { notation, destination: destRaw, destinationType: 'output' };
     });
 };
@@ -108,7 +102,7 @@ const runPlugin = async () => {
     try {
         core.info('Starting Keeper Secrets Manager plugin');
         fs.mkdirSync('/app', { recursive: true });
-        
+
         const { token, isConfigJson, config } = processToken(process.env.KSM_CONFIG);
         const inputs = parseSecretMappings();
         const storage = await setupStorage(token, isConfigJson, config);
@@ -144,21 +138,10 @@ const runPlugin = async () => {
                         Buffer.from(String(secret), 'utf8');
             }
 
-            if (input.destinationType === 'file') {
-                const fullPath = path.resolve(input.destination);
-                fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-                fs.writeFileSync(fullPath, data);
-            } else {
-                fs.mkdirSync('/harness/secrets', { recursive: true });
-                const secretFilePath = path.join('/harness/secrets', input.destination);
-                fs.writeFileSync(secretFilePath, data);
-                fs.chmodSync(secretFilePath, 0o600);
-                
-                if (input.destinationType === 'environment') {
-                    const outputValue = data.toString('utf8');
-                    console.log(`ENV:${input.destination}='${outputValue}'`);
-                }
-            }
+            fs.mkdirSync('/harness/secrets', { recursive: true });
+            const secretFilePath = path.join('/harness/secrets', input.destination);
+            fs.writeFileSync(secretFilePath, data);
+            fs.chmodSync(secretFilePath, 0o600);
         }
     } catch (error) {
         core.error(`Failed: ${error.message}`);
