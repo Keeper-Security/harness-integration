@@ -18,7 +18,7 @@ All secret flow happens strictly between the plugin container and Keeper, while 
 
 - Keeper Secrets Manager access with Application configured
 - Harness CI account with project setup
-- KSM configuration (one-time access token `US:...` or Base64-encoded token or JSON confign)
+- KSM configuration (one-time access token `US:...` or Base64-encoded token or JSON config)
 
 ## About
 
@@ -62,29 +62,26 @@ pipeline:
                     image: dhborse/keeper-harness-plugin
                     settings:
                       secrets: |
-                        VeYTRo-PHElAwfQT6f0TIA/field/password > DB_PASSWORD
-                        VeYTRo-PHElAwfQT6f0TIA/field/login > DB_USERNAME
-                        VeYTRo-PHElAwfQT6f0TIA/file/credentials.txt > FILE_DATA
+                        RECORD_UID/field/password > PASSWORD
+                        RECORD_UID/field/login > USERNAME
                     envVariables:
-                      KSM_CONFIG: <+secrets.getValue("Test_File_secret")>
+                      KSM_CONFIG: <+secrets.getValue("keeper_base64_secret")>
               - step:
                   type: Run
-                  name: Use_Keeper_Secrets
-                  identifier: Use_Keeper_Secrets
+                  name: Use_Secrets
+                  identifier: Use_Secrets
                   spec:
                     image: alpine:3.20
                     shell: Sh
                     command: |
-                      if [ -f /harness/secrets/DB_USERNAME ] && [ -f /harness/secrets/DB_PASSWORD ]; then
-                        DB_USERNAME=$(cat /harness/secrets/DB_USERNAME)
-                        DB_PASSWORD=$(cat /harness/secrets/DB_PASSWORD)
-                        echo "Username: $DB_USERNAME"
-                        echo "Password: $DB_PASSWORD"
-                      fi
-                      
-                      if [ -f /harness/secrets/FILE_DATA ]; then
-                        FILE_DATA=$(cat /harness/secrets/FILE_DATA)
-                        echo "File Data: $FILE_DATA"
+                      if [ -f /harness/secrets/USERNAME ] && [ -f /harness/secrets/PASSWORD ]; then
+                        USERNAME=$(cat /harness/secrets/USERNAME)
+                        PASSWORD=$(cat /harness/secrets/PASSWORD)
+                        echo "Username: $USERNAME"
+                        echo "Password retrieved successfully"
+                      else
+                        echo "Error: Secret files not found"
+                        exit 1
                       fi
 ```
 
@@ -113,10 +110,10 @@ Keeper Notation queries mapping secrets to destinations:
 **Example:**
 ```yaml
 secrets: |
-  VeYTRo-PHElAwfQT6f0TIA/field/password > DB_PASSWORD
-  VeYTRo-PHElAwfQT6f0TIA/field/login > DB_USERNAME
-  VeYTRo-PHElAwfQT6f0TIA/file/credentials.txt > FILE_DATA
+  RECORD_UID/field/password > PASSWORD
+  RECORD_UID/field/login > USERNAME
 ```
+Replace `RECORD_UID` with the actual Record UID from your Keeper Vault.
 
 ## Keeper Notation Format
 
@@ -138,10 +135,11 @@ The destination defines where the secret is stored:
 |--------|-------------|----------------|
 | `VARIABLE_NAME` | Default output (recommended) | `/harness/secrets/VARIABLE_NAME` |
 
-**Examples:**
+**Example:**
 ```yaml
-# Default: saves to /harness/secrets/DB_PASSWORD
-VeYTRo-PHElAwfQT6f0TIA/field/password > DB_PASSWORD
+# Saves to /harness/secrets/PASSWORD and /harness/secrets/USERNAME
+RECORD_UID/field/password > PASSWORD
+RECORD_UID/field/login > USERNAME
 ```
 
 ## Accessing Secrets
@@ -156,9 +154,8 @@ Secrets are stored in `/harness/secrets/` directory. Read them in subsequent ste
       image: alpine:3.20
       shell: Sh
       command: |
-        DB_USERNAME=$(cat /harness/secrets/DB_USERNAME)
-        DB_PASSWORD=$(cat /harness/secrets/DB_PASSWORD)
-        FILE_DATA=$(cat /harness/secrets/FILE_DATA)
+        USERNAME=$(cat /harness/secrets/USERNAME)
+        PASSWORD=$(cat /harness/secrets/PASSWORD)
         # Use secrets in your build/deploy process
 ```
 
