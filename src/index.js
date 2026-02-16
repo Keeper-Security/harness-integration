@@ -44,7 +44,7 @@ const processToken = (rawToken) => {
     if (!token.startsWith('US:') && !token.startsWith('{')) {
         try {
             token = Buffer.from(token, 'base64').toString('utf-8').trim();
-        } catch (e) {
+        } catch {
             // Not base64, use as-is
             core.warning('Base64 decode failed, using raw value');
         }

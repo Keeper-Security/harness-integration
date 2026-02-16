@@ -59,7 +59,7 @@ pipeline:
                   name: Fetch_Keeper_Secrets
                   identifier: Fetch_Keeper_Secrets
                   spec:
-                    image: dhborse/keeper-harness-plugin
+                    image: keeper/harness-plugin:latest
                     settings:
                       secrets: |
                         RECORD_UID/field/password > PASSWORD
