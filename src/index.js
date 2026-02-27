@@ -29,7 +29,7 @@ const splitInput = (text) => {
 const processToken = (rawToken) => {
     if (!rawToken) {
         core.error('KSM config is required');
-        core.error('Set KSM_CONFIG environment variable');
+        core.error('Set PLUGIN_KSM_CONFIG (or ksm_config in settings)');
         process.exit(1);
     }
 
@@ -103,7 +103,7 @@ const runPlugin = async () => {
         core.info('Starting Keeper Secrets Manager plugin');
         fs.mkdirSync('/app', { recursive: true });
 
-        const { token, isConfigJson, config } = processToken(process.env.KSM_CONFIG);
+        const { token, isConfigJson, config } = processToken(process.env.PLUGIN_KSM_CONFIG);
         const inputs = parseSecretMappings();
         const storage = await setupStorage(token, isConfigJson, config);
         const secrets = await getSecrets({ storage });

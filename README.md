@@ -59,13 +59,12 @@ pipeline:
                   name: Fetch_Keeper_Secrets
                   identifier: Fetch_Keeper_Secrets
                   spec:
-                    image: dhborse/keeper-harness-plugin
+                    image: keeper/harness-plugin:latest
                     settings:
+                      ksm_config: <+secrets.getValue("keeper_base64_secret")>
                       secrets: |
                         RECORD_UID/field/password > PASSWORD
                         RECORD_UID/field/login > USERNAME
-                    envVariables:
-                      KSM_CONFIG: <+secrets.getValue("keeper_base64_secret")>
               - step:
                   type: Run
                   name: Use_Secrets
@@ -87,13 +86,15 @@ pipeline:
 
 ## Inputs
 
-### KSM_CONFIG
+### ksm_config (PLUGIN_KSM_CONFIG)
 
-Keeper Secrets Manager configuration for authentication. Store in Harness secrets and reference:
+Keeper Secrets Manager configuration for authentication. Store in Harness secrets and reference via the standard `settings` block (Harness/Drone maps `ksm_config` to `PLUGIN_KSM_CONFIG`):
 
 ```yaml
-envVariables:
-  KSM_CONFIG: <+secrets.getValue("Keeper_Config_Secret")>
+settings:
+  ksm_config: <+secrets.getValue("Keeper_Config_Secret")>
+  secrets: |
+    RECORD_UID/field/password > PASSWORD
 ```
 
 **Supported Formats:**
@@ -172,7 +173,7 @@ Secrets are stored in `/harness/secrets/` directory. Read them in subsequent ste
 - **Scope:** Pipeline execution only - automatically cleaned up after completion
 - **Access:** Read files directly using `cat` or file operations
 
-The `envVariables` section is **only** used to pass `KSM_CONFIG` to the plugin. Actual secrets are written to files in `/harness/secrets/` directory.
+The `ksm_config` setting is passed via the standard `settings` block (mapped to `PLUGIN_KSM_CONFIG`). Actual secrets are written to files in `/harness/secrets/` directory.
 
 ## Security
 
@@ -194,7 +195,7 @@ The `envVariables` section is **only** used to pass `KSM_CONFIG` to the plugin. 
 
 | Error | Solution |
 |-------|----------|
-| `KSM config is required` | Verify secret exists and expression `<+secrets.getValue("SECRET_NAME")>` is correct |
+| `KSM config is required` | Verify secret exists, `ksm_config` is set in settings, and expression `<+secrets.getValue("SECRET_NAME")>` is correct |
 | `Invalid token format` | Check token starts with `US:` or `{` for JSON config |
 | `Value not found for notation` | Verify Record UID, field name (case-sensitive), and Application permissions |
 | `Failed to download file` | Check file exists in record, name matches exactly, and Application has file access permissions |
