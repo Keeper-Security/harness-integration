@@ -72,7 +72,7 @@ describe('index.js - Complete Test Suite', () => {
         pathModule.join = path.join;
 
         // Clear environment variables
-        delete process.env.KSM_CONFIG;
+        delete process.env.PLUGIN_KSM_CONFIG;
         delete process.env.PLUGIN_SECRETS;
     });
 
@@ -89,45 +89,45 @@ describe('index.js - Complete Test Suite', () => {
 
     describe('processToken - Error Cases', () => {
         test('should exit when rawToken is null', () => {
-            delete process.env.KSM_CONFIG;
+            delete process.env.PLUGIN_KSM_CONFIG;
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
             expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('KSM config is required'));
         });
 
         test('should exit when rawToken is undefined', () => {
-            delete process.env.KSM_CONFIG;
+            delete process.env.PLUGIN_KSM_CONFIG;
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 
         test('should exit when rawToken is empty string', () => {
-            process.env.KSM_CONFIG = '';
+            process.env.PLUGIN_KSM_CONFIG = '';
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 
         test('should exit when token contains ${ Harness expression', () => {
-            process.env.KSM_CONFIG = '${harness.expression}';
+            process.env.PLUGIN_KSM_CONFIG = '${harness.expression}';
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
             expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Harness expression not resolved'));
         });
 
         test('should exit when token contains <+ Harness expression', () => {
-            process.env.KSM_CONFIG = '<+expression>';
+            process.env.PLUGIN_KSM_CONFIG = '<+expression>';
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 
         test('should exit when token contains ngSecretManager', () => {
-            process.env.KSM_CONFIG = 'ngSecretManager.token';
+            process.env.PLUGIN_KSM_CONFIG = 'ngSecretManager.token';
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 
         test('should exit when token is empty after trim', () => {
-            process.env.KSM_CONFIG = '   ';
+            process.env.PLUGIN_KSM_CONFIG = '   ';
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
             expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Token is null or empty'));
@@ -135,7 +135,7 @@ describe('index.js - Complete Test Suite', () => {
 
         test('should exit when JSON config is missing hostname field', () => {
             const jsonConfig = JSON.stringify({ clientId: 'client', privateKey: 'key' });
-            process.env.KSM_CONFIG = jsonConfig;
+            process.env.PLUGIN_KSM_CONFIG = jsonConfig;
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
             expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Missing required fields'));
@@ -143,34 +143,34 @@ describe('index.js - Complete Test Suite', () => {
 
         test('should exit when JSON config is missing clientId field', () => {
             const jsonConfig = JSON.stringify({ hostname: 'test.com', privateKey: 'key' });
-            process.env.KSM_CONFIG = jsonConfig;
+            process.env.PLUGIN_KSM_CONFIG = jsonConfig;
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 
         test('should exit when JSON config is missing privateKey field', () => {
             const jsonConfig = JSON.stringify({ hostname: 'test.com', clientId: 'client' });
-            process.env.KSM_CONFIG = jsonConfig;
+            process.env.PLUGIN_KSM_CONFIG = jsonConfig;
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 
         test('should exit when JSON config is missing multiple fields', () => {
             const jsonConfig = JSON.stringify({ hostname: 'test.com' });
-            process.env.KSM_CONFIG = jsonConfig;
+            process.env.PLUGIN_KSM_CONFIG = jsonConfig;
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
         });
 
         test('should exit when JSON config is invalid', () => {
-            process.env.KSM_CONFIG = '{invalid json}';
+            process.env.PLUGIN_KSM_CONFIG = '{invalid json}';
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
             expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Invalid JSON config'));
         });
 
         test('should exit when token format is invalid (not US: or JSON)', () => {
-            process.env.KSM_CONFIG = 'INVALID:token';
+            process.env.PLUGIN_KSM_CONFIG = 'INVALID:token';
             require('../index');
             expect(mockExit).toHaveBeenCalledWith(1);
             expect(mockStderrWrite).toHaveBeenCalledWith(expect.stringContaining('Invalid token format'));
@@ -180,7 +180,7 @@ describe('index.js - Complete Test Suite', () => {
     describe('processToken - Success Cases', () => {
         test('should decode base64 token successfully', async () => {
             const base64Token = Buffer.from('US:decoded-token').toString('base64');
-            process.env.KSM_CONFIG = base64Token;
+            process.env.PLUGIN_KSM_CONFIG = base64Token;
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -193,7 +193,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle base64 decode error gracefully', async () => {
-            process.env.KSM_CONFIG = 'invalid-base64!@#';
+            process.env.PLUGIN_KSM_CONFIG = 'invalid-base64!@#';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -207,7 +207,7 @@ describe('index.js - Complete Test Suite', () => {
 
         test('should parse valid JSON config', async () => {
             const jsonConfig = JSON.stringify({ hostname: 'test.com', clientId: 'client', privateKey: 'key' });
-            process.env.KSM_CONFIG = jsonConfig;
+            process.env.PLUGIN_KSM_CONFIG = jsonConfig;
             process.env.PLUGIN_SECRETS = 'notation>output';
             const mockStorage = {};
             localConfigStorage.mockReturnValue(mockStorage);
@@ -221,7 +221,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should accept US: token format', async () => {
-            process.env.KSM_CONFIG = 'US:test-token';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test-token';
             process.env.PLUGIN_SECRETS = 'notation>output';
             const mockStorage = {};
             localConfigStorage.mockReturnValue(mockStorage);
@@ -235,7 +235,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle token with whitespace', async () => {
-            process.env.KSM_CONFIG = '  US:test-token  ';
+            process.env.PLUGIN_KSM_CONFIG = '  US:test-token  ';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -248,7 +248,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should call info function on plugin start', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -268,7 +268,7 @@ describe('index.js - Complete Test Suite', () => {
                 throw new Error('Base64 decode error');
             });
             
-            process.env.KSM_CONFIG = 'not-us-format-token';
+            process.env.PLUGIN_KSM_CONFIG = 'not-us-format-token';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -284,7 +284,7 @@ describe('index.js - Complete Test Suite', () => {
 
     describe('parseSecretMappings', () => {
         test('should treat env: prefix as literal destination name (no special parsing)', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -297,7 +297,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should parse file: destination type', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -310,7 +310,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should parse output destination type (default)', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -323,7 +323,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle input without > separator', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -336,7 +336,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle multiple > characters', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>part1>destination';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -348,7 +348,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle multiple secret mappings', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation1>env:VAR1\nnotation2>file:/path/file\nnotation3>output1';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -361,7 +361,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should filter empty lines from multiline input', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation1>output1\n\nnotation2>output2\n  \nnotation3>output3';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -374,7 +374,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle empty secrets input', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = '';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -388,7 +388,7 @@ describe('index.js - Complete Test Suite', () => {
 
     describe('runPlugin - File Handling', () => {
         test('should create /app directory', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             const mockStorage = {};
             localConfigStorage.mockReturnValue(mockStorage);
@@ -406,7 +406,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should treat file: prefix as literal destination (writes to /harness/secrets/)', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -419,7 +419,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should create /harness/secrets for any destination', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -433,7 +433,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle file secret with fileId', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -448,7 +448,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle file secret with fileUid', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -463,7 +463,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle file secret with url', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -478,7 +478,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle file secret with /file/ notation', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'record/field/file/file.txt>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -495,7 +495,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle downloadFile error gracefully', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -510,7 +510,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle Uint8Array file data', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -526,7 +526,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle Buffer file data', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -541,7 +541,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle other file data types', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -557,7 +557,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle file data that is neither Uint8Array nor Buffer (line 135 branch)', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -576,7 +576,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle file data that is Buffer (line 134 branch)', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -598,7 +598,7 @@ describe('index.js - Complete Test Suite', () => {
         test('should handle file data that is plain Uint8Array (not Buffer)', async () => {
             // Test the second branch: Buffer.isBuffer is false but instanceof Uint8Array is true
             // Use a plain Uint8Array (not a Buffer) to test the middle branch of the ternary
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>file:/path/to/file.txt';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -624,7 +624,7 @@ describe('index.js - Complete Test Suite', () => {
 
     describe('runPlugin - Secret Value Handling', () => {
         test('should handle string secret value', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -637,7 +637,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle Buffer secret value', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -650,7 +650,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle non-string, non-buffer secret value', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -663,7 +663,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should skip secret when value is not found', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -677,7 +677,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should skip secret when value is undefined', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -692,7 +692,7 @@ describe('index.js - Complete Test Suite', () => {
 
     describe('runPlugin - Destination Types', () => {
         test('should handle env-prefixed destination as literal (writes to /harness/secrets/)', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -707,7 +707,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle env-prefixed destination with Buffer data', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -722,7 +722,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle env-prefixed destination with non-Buffer data', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>env:VAR_NAME';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -738,7 +738,7 @@ describe('index.js - Complete Test Suite', () => {
 
 
         test('should create /harness/secrets directory for non-file destinations', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -751,7 +751,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should set file permissions to 0o600 for secret files', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -764,7 +764,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should write only to /harness/secrets for output destinations', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output_var';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -779,7 +779,7 @@ describe('index.js - Complete Test Suite', () => {
 
     describe('runPlugin - Error Handling', () => {
         test('should handle storage initialization error', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockRejectedValue(new Error('Storage initialization failed'));
@@ -791,7 +791,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle token-related error with specific message', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockRejectedValue(new Error('Invalid token'));
@@ -802,7 +802,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle expired token error', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockRejectedValue(new Error('Token expired'));
@@ -813,7 +813,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle invalid token error', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockRejectedValue(new Error('invalid'));
@@ -824,7 +824,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle getSecrets error', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -837,7 +837,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle generic error without token message', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -852,7 +852,7 @@ describe('index.js - Complete Test Suite', () => {
 
     describe('Edge Cases and Integration', () => {
         test('should handle null secret object', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -865,7 +865,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle object secret without file properties', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -880,7 +880,7 @@ describe('index.js - Complete Test Suite', () => {
         test('should handle object secret without file properties and notation without /file/', async () => {
             // Test the branch where typeof secret === 'object' && secret !== null is true
             // but (secret.fileId || secret.fileUid || secret.url || notationIsFile) is false
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'regular/notation>output';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -896,7 +896,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle complex multiline input with mixed types', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'notation1>env:VAR1\nnotation2>file:/path/file\nnotation3>output1\nnotation4>env:VAR2';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
@@ -909,7 +909,7 @@ describe('index.js - Complete Test Suite', () => {
         });
 
         test('should handle file notation with multiple file references', async () => {
-            process.env.KSM_CONFIG = 'US:test';
+            process.env.PLUGIN_KSM_CONFIG = 'US:test';
             process.env.PLUGIN_SECRETS = 'record1/field/file/file1.txt>file:/path/file1\nrecord2/field/file/file2.txt>file:/path/file2';
             localConfigStorage.mockReturnValue({});
             initializeStorage.mockResolvedValue();
