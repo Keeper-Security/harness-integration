@@ -2,7 +2,7 @@
   "name": "harness_keeper_plugin",
   "version": "1.0.0",
   "private": true,
-  "description": "",
+  "description": "Keeper Secrets Manager integration for Harness CI",
   "main": "index.js",
   "scripts": {
     "test": "jest --coverage",
@@ -11,8 +11,8 @@
     "lint:fix": "eslint . --fix"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Keeper Security",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "@keeper-security/secrets-manager-core": "^17.4.0"

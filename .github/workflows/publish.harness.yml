@@ -56,6 +56,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -90,21 +93,22 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           if [ -n "${DOCKERHUB_USERNAME}" ]; then
-            IMAGE_TAG="${DOCKERHUB_USERNAME}/harness-keeper-plugin:${{ steps.get_version.outputs.version }}"
-            LATEST_TAG="${DOCKERHUB_USERNAME}/harness-keeper-plugin:latest"
+            IMAGE_TAG="${DOCKERHUB_USERNAME}/harness-plugin:${{ steps.get_version.outputs.version }}"
+            LATEST_TAG="${DOCKERHUB_USERNAME}/harness-plugin:latest"
           else
-            IMAGE_TAG="harness-keeper-plugin:${{ steps.get_version.outputs.version }}"
-            LATEST_TAG="harness-keeper-plugin:latest"
+            IMAGE_TAG="harness-plugin:${{ steps.get_version.outputs.version }}"
+            LATEST_TAG="harness-plugin:latest"
           fi
           echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_OUTPUT
           echo "LATEST_TAG=${LATEST_TAG}" >> $GITHUB_OUTPUT
           echo "Image tag: ${IMAGE_TAG}"
           echo "Latest tag: ${LATEST_TAG}"
 
-      - name: Build Docker image
+      - name: Build Docker image (multi-platform)
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/') }}
           tags: |
             ${{ steps.docker_tags.outputs.IMAGE_TAG }}
@@ -115,7 +119,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: harness-keeper-plugin-build
+          name: harness-plugin-build
           path: |
             Dockerfile
             package.json
@@ -173,18 +177,18 @@ jobs:
           echo "Generating SBOM with Manifest CLI..."
           /tmp/bin/manifest sbom "." \
             --generator=syft \
-            --name=harness-keeper-plugin \
+            --name=harness-plugin \
             --version=${VERSION} \
             --output=spdx-json \
-            --file=harness-keeper-plugin-sbom.json \
+            --file=harness-plugin-sbom.json \
             --api-key=${MANIFEST_API_KEY} \
             --publish=true \
             --asset-label=application,sbom-generated,nodejs,harness-plugin,docker \
             --generator-config=syft-config.yaml
 
-          echo "SBOM generated and uploaded successfully: harness-keeper-plugin-sbom.json"
+          echo "SBOM generated and uploaded successfully: harness-plugin-sbom.json"
           echo "---------- SBOM Preview (first 20 lines) ----------"
-          head -n 20 harness-keeper-plugin-sbom.json
+          head -n 20 harness-plugin-sbom.json
 
   # Docker registry publish job - reserved for future use
   # publish-docker-registry:
@@ -218,8 +222,8 @@ jobs:
   #         context: .
   #         push: true
   #         tags: |
-  #           ${{ secrets.DOCKER_REGISTRY }}/harness-keeper-plugin:${{ steps.get_version.outputs.version }}
-  #           ${{ secrets.DOCKER_REGISTRY }}/harness-keeper-plugin:latest
+  #           ${{ secrets.DOCKER_REGISTRY }}/harness-plugin:${{ steps.get_version.outputs.version }}
+  #           ${{ secrets.DOCKER_REGISTRY }}/harness-plugin:latest
 
   create-release:
     runs-on: ubuntu-latest
@@ -249,9 +253,9 @@ jobs:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         run: |
           if [ -n "${DOCKERHUB_USERNAME}" ]; then
-            IMAGE_NAME="${DOCKERHUB_USERNAME}/harness-keeper-plugin:${{ steps.get_version.outputs.version }}"
+            IMAGE_NAME="${DOCKERHUB_USERNAME}/harness-plugin:${{ steps.get_version.outputs.version }}"
           else
-            IMAGE_NAME="harness-keeper-plugin:${{ steps.get_version.outputs.version }}"
+            IMAGE_NAME="harness-plugin:${{ steps.get_version.outputs.version }}"
           fi
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
@@ -280,11 +284,10 @@ jobs:
                 spec:
                   image: ${{ steps.docker_image.outputs.IMAGE_NAME }}
                   settings:
+                    ksm_config: <+secrets.getValue("Keeper_Config_Secret")>
                     secrets: |
                       VeYTRo-PHElAwfQT6f0TIA/field/password > DB_PASSWORD
                       VeYTRo-PHElAwfQT6f0TIA/field/login > DB_USERNAME
-                  envVariables:
-                    KSM_CONFIG: <+secrets.getValue("Keeper_Config_Secret")>
             ```
             
             ### What's Changed
