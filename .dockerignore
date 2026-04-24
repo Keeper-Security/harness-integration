@@ -30,3 +30,12 @@ build/
 tmp/
 temp/
 *.tmp
+
+# Claude Code files - internal dev tooling, never ship in image
+.claude/
+CLAUDE.md
+plans/
+
+# Documentation files not needed at runtime
+*.md
+!README.md
